@@ -5,18 +5,18 @@ import (
 )
 
 type SqlTable struct {
-	name  string
-	alias string
+	_name  string
+	_alias string
 }
 
 func (self SqlTable) Name() string {
-	return self.name
+	return self._name
 }
 func (self SqlTable) Alias() string {
-	if len(self.alias) > 0 {
-		return self.alias
+	if self._alias != "" {
+		return self._alias
 	}
-	return self.name
+	return self._name
 }
 
 type SqlQuery struct {
@@ -53,8 +53,14 @@ func (self SqlQuery) GenSql() string {
 func main() {
 	business := MakeBusiness()
 	b := business.As("b")
-	fmt.Println("business", business.name, business.alias)
-	fmt.Println("b", b.name, b.alias)
+
+	fmt.Println("business = ", business.Name(), business.Alias())
+	fmt.Println("b = ", b.Name(), b.Alias())
+
 	query := SqlQuery{}.From(b).Select(b.id.As("Identifier"), b.businessName)
+	fmt.Println("sql", query.GenSql())
+	query = SqlQuery{}.From(b).Select(b.Star()...)
+	fmt.Println("sql", query.GenSql())
+	query = SqlQuery{}.From(business).Select(business.Star()...)
 	fmt.Println("sql", query.GenSql())
 }

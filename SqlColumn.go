@@ -12,7 +12,7 @@ func (self SqlColumn) As(newName string) SqlColumn {
 }
 
 func (self SqlColumn) Name() string {
-	return self.table.Name() + "." + self.name
+	return self.table.Alias() + "." + self.name
 }
 
 func (self SqlColumn) Alias() string {
