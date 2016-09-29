@@ -1,23 +1,32 @@
 package main
 
-type SqlColumn struct {
-	table SqlObject
+// SQLColumn represents a column in a database, or a litteral value
+type SQLColumn struct {
+	table SQLObject
 	name  string
 	alias string
 }
 
-func (self SqlColumn) As(newName string) SqlColumn {
-	self.alias = newName
-	return self
+// As - is used to determine the name that would appear in the SQL statement results
+func (column SQLColumn) As(newName string) SQLColumn {
+	column.alias = newName
+	return column
 }
 
-func (self SqlColumn) Name() string {
-	return self.table.Alias() + "." + self.name
+// Name - is <raw table name>.<column name in table>
+func (column SQLColumn) Name() string {
+	return column.table.Alias() + "." + column.name
 }
 
-func (self SqlColumn) Alias() string {
-	if len(self.alias) > 0 {
-		return self.alias
+// Alias - is the name that appears in the SQL statement results, set via As above
+func (column SQLColumn) Alias() string {
+	if len(column.alias) > 0 {
+		return column.alias
 	}
-	return self.name
+	return column.name
+}
+
+// Eq - create a where clause that does an equality compare
+func (column SQLColumn) Eq(value interface{}) SQLWhere {
+	return SQLWhere{column: column, op: " = ", value: value}
 }

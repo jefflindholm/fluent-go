@@ -1,38 +1,48 @@
 package main
 
+// Business - Business table
 type Business struct {
-	SqlTable
-	star           []*SqlColumn
-	id             SqlColumn
-	businessName   SqlColumn
-	businessNumber SqlColumn
+	SQLTable
+	star           []*SQLColumn
+	id             SQLColumn
+	businessName   SQLColumn
+	businessNumber SQLColumn
 }
 
-func (self Business) As(newName string) Business {
-	self._alias = newName
-	// since we made a new instance of the table assign all its columns tables to itself
-	self.id.table = self
-	self.businessName.table = self
-	self.businessNumber.table = self
-	self.SetStar()
-	return self
+// On - builds a Join statement for this table to be joined into the SQL statement
+func (mySelf Business) On(column SQLColumn) SQLJoin {
+	return SQLJoin{from: mySelf, on: column}
 }
-func (self Business) Star() []SqlColumn {
-	var results []SqlColumn
-	for _, c := range self.star {
+
+// As - allows the table to change the alias used
+func (mySelf Business) As(newName string) Business {
+	mySelf._alias = newName
+	mySelf.setStar()
+	for _, c := range mySelf.star {
+		c.table = mySelf
+	}
+	return mySelf
+}
+
+// Star - return a list of all the columns in the table
+func (mySelf Business) Star() []SQLColumn {
+	var results []SQLColumn
+	for _, c := range mySelf.star {
 		results = append(results, *c)
 	}
 	return results
 }
+
+// MakeBusiness - the constructor
 func MakeBusiness() Business {
 	result := Business{}
 	result._name = "businesses"
-	result.id = SqlColumn{name: "id", table: result}
-	result.businessName = SqlColumn{name: "business_name", alias: "businessName", table: result}
-	result.businessNumber = SqlColumn{name: "business_number", alias: "businessNumber", table: result}
-	result.SetStar()
+	result.id = SQLColumn{name: "id", table: result}
+	result.businessName = SQLColumn{name: "business_name", alias: "businessName", table: result}
+	result.businessNumber = SQLColumn{name: "business_number", alias: "businessNumber", table: result}
+	result.setStar()
 	return result
 }
-func (self *Business) SetStar() {
-	self.star = []*SqlColumn{&self.id, &self.businessName, &self.businessNumber}
+func (mySelf *Business) setStar() {
+	mySelf.star = []*SQLColumn{&mySelf.id, &mySelf.businessName, &mySelf.businessNumber}
 }
