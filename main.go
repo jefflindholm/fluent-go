@@ -16,6 +16,14 @@ type SQLWhere struct {
 	wheres      []SQLWhere
 }
 
+// Or - build an OR'ed list of conditionals
+func (mySelf SQLWhere) Or(where SQLWhere) SQLWhere {
+	newWhere := SQLWhere{conjunction: "OR"}
+	newWhere.wheres = append(newWhere.wheres, mySelf)
+	newWhere.wheres = append(newWhere.wheres, where)
+	return newWhere
+}
+
 // SQLQuery - the actual SQL Query to be processed
 type SQLQuery struct {
 	columns []SQLColumn
@@ -65,31 +73,29 @@ func (mySelf SQLQuery) GenSQL() string {
 	}
 	SQL += join
 
-	where := buildWhere(mySelf.wheres)
+	where := buildWhere(mySelf.wheres, "AND")
 	SQL += "\nWHERE\n" + where
 
 	return SQL
 }
-func buildWhere(wheres []SQLWhere) string {
+func buildWhere(wheres []SQLWhere, conjuction string) string {
 	where := ""
 	for _, w := range wheres {
-		if w.conjunction != "" {
-			if where != "" {
-				where += "\n" + w.conjunction
-			}
-			where += "(\n)"
-			where += buildWhere(w.wheres)
-			where += "\n)\n"
+		var subWhere string
+		if len(w.wheres) > 0 {
+			subWhere = "(" + buildWhere(w.wheres, w.conjunction) + ")"
 		} else {
 			val, err := buildValue(w.value, w.op)
 			if err != nil {
-				fmt.Println("buildWhere - failure - ", err)
+				fmt.Println(err)
+			} else {
+				subWhere = w.column.Name() + w.op + val
 			}
-			if where != "" {
-				where += "\nAND\n"
-			}
-			where += w.column.Name() + w.op + val
 		}
+		if where != "" {
+			where += "\n" + conjuction + "\n"
+		}
+		where += subWhere
 	}
 	return where
 }
@@ -157,9 +163,8 @@ func main() {
 	fmt.Println("SQL - join", query.GenSQL())
 
 	query = query.Where(b.businessNumber.Eq("12345")).Where(b.id.Eq(4001)).Where(b.id.Between(1, 10))
-	query = query.Where(b.businessName.Like("bubba")).
-		Where(businessAddress.zip.In(46062, 46032)).
-		Where(b.businessName.In("Bubba Car World", "Bubbas Cars"))
+	query = query.Where(businessAddress.zip.In(46062, 46032)).
+		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")))
 	fmt.Println("SQL - where", query.GenSQL())
 	var u interface{}
 	u = "some string"
