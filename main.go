@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// SQLWhere - where clause for the query
 type SQLWhere struct {
 	column      SQLColumn
 	op          string
@@ -80,7 +81,7 @@ func buildWhere(wheres []SQLWhere) string {
 			where += buildWhere(w.wheres)
 			where += "\n)\n"
 		} else {
-			val, err := buildValue(w.value)
+			val, err := buildValue(w.value, w.op)
 			if err != nil {
 				fmt.Println("buildWhere - failure - ", err)
 			}
@@ -92,12 +93,31 @@ func buildWhere(wheres []SQLWhere) string {
 	}
 	return where
 }
-func buildValue(value interface{}) (string, error) {
+func buildString(value string) string {
+	return "'" + value + "'"
+}
+func buildValue(value interface{}, op string) (string, error) {
 	switch value.(type) {
 	case int:
 		return strconv.Itoa(value.(int)), nil
 	case string:
-		return "'" + value.(string) + "'", nil
+		return buildString(value.(string)), nil
+	case []interface{}:
+		if op == " BETWEEN " {
+			v1, _ := buildValue(value.([]interface{})[0], "")
+			v2, _ := buildValue(value.([]interface{})[1], "")
+			return v1 + " AND " + v2, nil
+		}
+		list := "("
+		for i, val := range value.([]interface{}) {
+			if i > 0 {
+				list += ", "
+			}
+			v, _ := buildValue(val, "")
+			list += v
+		}
+		list += ")"
+		return list, nil
 	}
 	return "", errors.New("unkown type")
 }
@@ -136,7 +156,10 @@ func main() {
 	query = query.Select(businessAddress.Star()...)
 	fmt.Println("SQL - join", query.GenSQL())
 
-	query = query.Where(b.businessNumber.Eq("12345")).Where(b.id.Eq(4001))
+	query = query.Where(b.businessNumber.Eq("12345")).Where(b.id.Eq(4001)).Where(b.id.Between(1, 10))
+	query = query.Where(b.businessName.Like("bubba")).
+		Where(businessAddress.zip.In(46062, 46032)).
+		Where(b.businessName.In("Bubba Car World", "Bubbas Cars"))
 	fmt.Println("SQL - where", query.GenSQL())
 	var u interface{}
 	u = "some string"

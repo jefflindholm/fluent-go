@@ -30,3 +30,22 @@ func (column SQLColumn) Alias() string {
 func (column SQLColumn) Eq(value interface{}) SQLWhere {
 	return SQLWhere{column: column, op: " = ", value: value}
 }
+
+// Like - create where clause for LIKE compare
+func (column SQLColumn) Like(value string) SQLWhere {
+	return SQLWhere{column: column, op: " LIKE ", value: "%" + value + "%"}
+}
+
+// Between - create where clause for column between 2 values
+func (column SQLColumn) Between(val1 interface{}, val2 interface{}) SQLWhere {
+	return SQLWhere{column: column, op: " BETWEEN ", value: []interface{}{val1, val2}}
+}
+
+// In - create where clause for SQL IN statement
+func (column SQLColumn) In(value ...interface{}) SQLWhere {
+	var values []interface{}
+	for _, v := range value {
+		values = append(values, v)
+	}
+	return SQLWhere{column: column, op: " IN ", value: values}
+}
