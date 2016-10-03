@@ -14,6 +14,21 @@ type SQLWhere struct {
 	value       interface{}
 	conjunction string
 	wheres      []SQLWhere
+	not         bool
+}
+
+// Not - do a NOT of the containing Where statement
+func (mySelf SQLWhere) Not(wheres ...SQLWhere) SQLWhere {
+	if wheres != nil && len(wheres) > 0 {
+		newWhere := SQLWhere{conjunction: wheres[0].conjunction, not: true}
+		newWhere.wheres = append(newWhere.wheres, mySelf)
+		for _, where := range wheres {
+			newWhere.wheres = append(newWhere.wheres, where)
+		}
+		return newWhere
+	}
+	mySelf.not = true
+	return mySelf
 }
 
 // Or - build an OR'ed list of conditionals
@@ -92,6 +107,9 @@ func buildWhere(wheres []SQLWhere, conjuction string) string {
 				subWhere = w.column.Name() + w.op + val
 			}
 		}
+		if w.not {
+			subWhere = "NOT(" + subWhere + ")"
+		}
 		if where != "" {
 			where += "\n" + conjuction + "\n"
 		}
@@ -163,8 +181,9 @@ func main() {
 	fmt.Println("SQL - join", query.GenSQL())
 
 	query = query.Where(b.businessNumber.Eq("12345")).Where(b.id.Eq(4001)).Where(b.id.Between(1, 10))
-	query = query.Where(businessAddress.zip.In(46062, 46032)).
-		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")))
+	query = query.
+		Where(SQLWhere{}.Not(businessAddress.zip.In(46062, 46032))).
+		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")).Not())
 	fmt.Println("SQL - where", query.GenSQL())
 	var u interface{}
 	u = "some string"

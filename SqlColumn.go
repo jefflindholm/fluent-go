@@ -28,7 +28,12 @@ func (column SQLColumn) Alias() string {
 
 // Eq - create a where clause that does an equality compare
 func (column SQLColumn) Eq(value interface{}) SQLWhere {
-	return SQLWhere{column: column, op: " = ", value: value}
+	return column.Op("=", value)
+}
+
+// Op - create where clause that does some simple one item compare (=, <, >, >=, <=, !=, etc)
+func (column SQLColumn) Op(op string, value interface{}) SQLWhere {
+	return SQLWhere{column: column, op: " " + op + " ", value: value}
 }
 
 // Like - create where clause for LIKE compare
