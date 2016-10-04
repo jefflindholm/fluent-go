@@ -2,9 +2,17 @@ package main
 
 // SQLColumn represents a column in a database, or a litteral value
 type SQLColumn struct {
-	table SQLObject
-	name  string
-	alias string
+	table    SQLObject
+	name     string
+	alias    string
+	literal  string
+	sortDesc bool
+}
+
+// Desc - is used to set the sort order for column to Desc
+func (column SQLColumn) Desc() SQLColumn {
+	column.sortDesc = true
+	return column
 }
 
 // As - is used to determine the name that would appear in the SQL statement results
@@ -15,6 +23,9 @@ func (column SQLColumn) As(newName string) SQLColumn {
 
 // Name - is <raw table name>.<column name in table>
 func (column SQLColumn) Name() string {
+	if len(column.literal) > 0 {
+		return "(" + column.literal + ")"
+	}
 	return column.table.Alias() + "." + column.name
 }
 

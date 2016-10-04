@@ -7,74 +7,51 @@ import (
 	"strconv"
 )
 
-// SQLWhere - where clause for the query
-type SQLWhere struct {
-	column      SQLColumn
-	op          string
-	value       interface{}
-	conjunction string
-	wheres      []SQLWhere
-	not         bool
-}
-
-// Not - do a NOT of the containing Where statement
-func (mySelf SQLWhere) Not(wheres ...SQLWhere) SQLWhere {
-	if wheres != nil && len(wheres) > 0 {
-		newWhere := SQLWhere{conjunction: wheres[0].conjunction, not: true}
-		newWhere.wheres = append(newWhere.wheres, mySelf)
-		for _, where := range wheres {
-			newWhere.wheres = append(newWhere.wheres, where)
-		}
-		return newWhere
-	}
-	mySelf.not = true
-	return mySelf
-}
-
-// Or - build an OR'ed list of conditionals
-func (mySelf SQLWhere) Or(where SQLWhere) SQLWhere {
-	newWhere := SQLWhere{conjunction: "OR"}
-	newWhere.wheres = append(newWhere.wheres, mySelf)
-	newWhere.wheres = append(newWhere.wheres, where)
-	return newWhere
-}
-
 // SQLQuery - the actual SQL Query to be processed
 type SQLQuery struct {
 	columns []SQLColumn
 	from    SQLObject
 	joins   []SQLJoin
 	wheres  []SQLWhere
+	orderBy []SQLColumn
 }
 
 // From - add the table the values should be taken from - the main table
-func (mySelf SQLQuery) From(table SQLObject) SQLQuery {
-	mySelf.from = table
-	return mySelf
+func (query SQLQuery) From(table SQLObject) SQLQuery {
+	query.from = table
+	return query
 }
 
 // Select - the list of columns to retrieve in the SQL statement
-func (mySelf SQLQuery) Select(columns ...SQLColumn) SQLQuery {
+func (query SQLQuery) Select(columns ...SQLColumn) SQLQuery {
 	for _, c := range columns {
-		mySelf.columns = append(mySelf.columns, c)
+		query.columns = append(query.columns, c)
 	}
-	return mySelf
+	return query
+}
+
+// OrderBy - the list of columns to order by
+func (query SQLQuery) OrderBy(columns ...SQLColumn) SQLQuery {
+	for _, c := range columns {
+		query.orderBy = append(query.orderBy, c)
+	}
+	return query
 }
 
 // GenSQL - create the SQL string from the information built
-func (mySelf SQLQuery) GenSQL() string {
+func (query SQLQuery) GenSQL() string {
 	SQL := "SELECT\n"
-	for i, c := range mySelf.columns {
+	for i, c := range query.columns {
 		if i != 0 {
 			SQL += "\n, "
 		}
 		SQL += Complete(c)
 	}
 	SQL += "\n"
-	SQL += "FROM\n" + Complete(mySelf.from)
+	SQL += "FROM\n" + Complete(query.from)
 
 	join := ""
-	for _, j := range mySelf.joins {
+	for _, j := range query.joins {
 		cmd := ""
 		if j.right {
 			cmd += "RIGHT "
@@ -88,8 +65,19 @@ func (mySelf SQLQuery) GenSQL() string {
 	}
 	SQL += join
 
-	where := buildWhere(mySelf.wheres, "AND")
+	where := buildWhere(query.wheres, "AND")
 	SQL += "\nWHERE\n" + where
+
+	if len(query.orderBy) > 0 {
+		SQL += "\nORDER BY\n"
+		for _, o := range query.orderBy {
+			dir := " ASC\n"
+			if o.sortDesc {
+				dir = " DESC\n"
+			}
+			SQL += o.Name() + dir
+		}
+	}
 
 	return SQL
 }
@@ -147,15 +135,15 @@ func buildValue(value interface{}, op string) (string, error) {
 }
 
 // Join - the information used to join a second or more table into the result set
-func (mySelf SQLQuery) Join(join SQLJoin) SQLQuery {
-	mySelf.joins = append(mySelf.joins, join)
-	return mySelf
+func (query SQLQuery) Join(join SQLJoin) SQLQuery {
+	query.joins = append(query.joins, join)
+	return query
 }
 
 // Where - create a where clause for the query
-func (mySelf SQLQuery) Where(where SQLWhere) SQLQuery {
-	mySelf.wheres = append(mySelf.wheres, where)
-	return mySelf
+func (query SQLQuery) Where(where SQLWhere) SQLQuery {
+	query.wheres = append(query.wheres, where)
+	return query
 }
 
 func main() {
@@ -180,10 +168,13 @@ func main() {
 	query = query.Select(businessAddress.Star()...)
 	fmt.Println("SQL - join", query.GenSQL())
 
+	literal := SQLColumn{literal: "SELECT count(*) FROM business_addresses WHERE business_id = b.id", alias: "addressCount"}
 	query = query.Where(b.businessNumber.Eq("12345")).Where(b.id.Eq(4001)).Where(b.id.Between(1, 10))
 	query = query.
+		Select(literal).
 		Where(SQLWhere{}.Not(businessAddress.zip.In(46062, 46032))).
-		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")).Not())
+		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")).Not()).
+		OrderBy(b.businessName.Desc(), b.businessNumber, literal)
 	fmt.Println("SQL - where", query.GenSQL())
 	var u interface{}
 	u = "some string"
