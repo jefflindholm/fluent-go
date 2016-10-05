@@ -150,6 +150,7 @@ func main() {
 	business := MakeBusiness()
 	businessAddress := MakeBusinessAddress()
 	b := business.As("b")
+	b2 := business.As("b2")
 
 	fmt.Println("business = ", business.Name(), business.Alias())
 	fmt.Println("b = ", b.Name(), b.Alias())
@@ -174,6 +175,8 @@ func main() {
 		Select(literal).
 		Where(SQLWhere{}.Not(businessAddress.zip.In(46062, 46032))).
 		Where(b.businessName.In("Bubba Car World", "Bubbas Cars").Or(b.businessName.Like("fred")).Not()).
+		Join(b2.On(b2.id).Using(b.id)).
+		Select(b2.businessName.As("parentName")).
 		OrderBy(b.businessName.Desc(), b.businessNumber, literal)
 	fmt.Println("SQL - where", query.GenSQL())
 	var u interface{}

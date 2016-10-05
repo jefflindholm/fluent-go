@@ -7,6 +7,7 @@ type Business struct {
 	id             SQLColumn
 	businessName   SQLColumn
 	businessNumber SQLColumn
+	parentId       SQLColumn
 }
 
 // On - builds a Join statement for this table to be joined into the SQL statement
@@ -40,9 +41,10 @@ func MakeBusiness() Business {
 	result.id = SQLColumn{name: "id", table: result}
 	result.businessName = SQLColumn{name: "business_name", alias: "businessName", table: result}
 	result.businessNumber = SQLColumn{name: "business_number", alias: "businessNumber", table: result}
+	result.parentId = SQLColumn{name: "parent_id", alias: "parentId", table: result}
 	result.setStar()
 	return result
 }
 func (mySelf *Business) setStar() {
-	mySelf.star = []*SQLColumn{&mySelf.id, &mySelf.businessName, &mySelf.businessNumber}
+	mySelf.star = []*SQLColumn{&mySelf.id, &mySelf.businessName, &mySelf.businessNumber, &mySelf.parentId}
 }
