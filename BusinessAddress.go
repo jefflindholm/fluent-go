@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // BusinessAddress - BusinessAddress table defininition - this file should be genereated
 type BusinessAddress struct {

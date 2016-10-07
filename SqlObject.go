@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // SQLObject - a simple interface to let us get the names of SQL Objects everywhere
 type SQLObject interface {

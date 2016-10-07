@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // Business - Business table
 type Business struct {

@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // SQLTable - a table in the SQL string
 type SQLTable struct {

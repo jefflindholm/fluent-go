@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // SQLColumn represents a column in a database, or a litteral value
 type SQLColumn struct {

@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // SQLJoin represents a join definition
 type SQLJoin struct {

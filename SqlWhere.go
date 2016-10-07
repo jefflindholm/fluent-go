@@ -1,4 +1,4 @@
-package main
+package fluentSQL
 
 // SQLWhere - where clause for the query
 type SQLWhere struct {
